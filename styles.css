@@ -65,6 +65,7 @@ body {
 }
 .top p { margin: 8px 0 0; color: var(--muted); }
 
+.top-actions { display: flex; gap: 10px; flex: none; }
 .theme-toggle {
   flex: none;
   width: 44px; height: 44px;
@@ -76,7 +77,33 @@ body {
   cursor: pointer;
   transition: transform .15s ease, border-color .15s ease;
 }
+#help-btn { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 24px; line-height: 1; }
 .theme-toggle:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+/* Pestañas */
+.tabs {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 12px 20px 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+.tabs [role=tab] {
+  flex: none;
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+.tabs [role=tab]:hover { border-color: var(--accent); }
+.tabs [role=tab][aria-selected=true] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 .layout {
   max-width: 1280px;
@@ -149,6 +176,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, label.btn:foc
 .logo-chip { display: flex; align-items: center; gap: 8px; }
 .logo-chip img { width: 44px; height: 44px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--border); }
 
+.players-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .contacts { display: grid; gap: 10px; margin-bottom: 10px; }
 .contact-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
 .cat-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
@@ -331,3 +359,37 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, label.btn:foc
 @media (prefers-reduced-motion: reduce) {
   .fab, #toast, .theme-toggle { transition: none; }
 }
+
+/* Ayuda */
+dialog#help {
+  width: min(92vw, 640px);
+  max-height: 86vh;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 20px 60px var(--shadow);
+}
+dialog#help::backdrop { background: rgba(0, 0, 0, .55); }
+.help-box { padding: 20px 22px 24px; max-height: 86vh; overflow-y: auto; }
+.help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.help-head h2 { margin: 0; font-family: "Barlow Condensed", sans-serif; font-size: 30px; }
+.help-close {
+  width: 38px; height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+.help-close:hover { border-color: var(--accent); color: var(--text); }
+.help-intro { margin: 0 0 14px; color: var(--muted); }
+#help details { border: 1px solid var(--border); border-radius: 12px; background: var(--panel-2); padding: 0 14px; margin-bottom: 10px; }
+#help summary { padding: 12px 0; font-weight: 700; cursor: pointer; }
+#help details[open] summary { color: var(--accent); }
+#help details p, #help details ol, #help details ul { margin: 0 0 12px; font-size: 15px; }
+#help details ol, #help details ul { padding-left: 20px; }
+#help li { margin-bottom: 6px; }
+.help-tip { color: var(--muted); }

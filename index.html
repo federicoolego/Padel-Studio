@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Flyers de torneos de pádel</title>
-  <meta name="description" content="Generá flyers de torneos de pádel y compartilos por WhatsApp.">
+  <title>Pádel Studio · Flyers y recordatorios de turnos</title>
+  <meta name="description" content="Generá flyers de torneos y recordatorios de turnos de pádel, y compartilos por WhatsApp.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%234ade80'/%3E%3Cpath d='M6 22c14 6 14 26 0 32M58 22c-14 6-14 26 0 32' fill='none' stroke='%23fff' stroke-width='4' opacity='.8'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,12 +14,21 @@
 <body>
   <header class="top">
     <div>
-      <h1>Flyers de torneos de pádel</h1>
-      <p>Cargá los datos del torneo y compartí el flyer por WhatsApp.</p>
+      <h1>Pádel Studio</h1>
+      <p>Flyers de torneos y recordatorios de turnos, listos para compartir por WhatsApp.</p>
     </div>
-    <button type="button" class="theme-toggle" id="app-theme" aria-label="Cambiar tema de la app">🌙</button>
+    <div class="top-actions">
+      <button type="button" class="theme-toggle" id="help-btn" aria-label="Ayuda: cómo funciona cada pestaña" aria-haspopup="dialog" title="Ayuda">?</button>
+      <button type="button" class="theme-toggle" id="app-theme" aria-label="Cambiar tema de la app">🌙</button>
+    </div>
   </header>
 
+  <div class="tabs" role="tablist" aria-label="Secciones de la app">
+    <button type="button" role="tab" id="tab-flyers" data-tab="flyers" aria-controls="panel-flyers" aria-selected="true">Flyers Torneos</button>
+    <button type="button" role="tab" id="tab-turnos" data-tab="turnos" aria-controls="panel-turnos" aria-selected="false" tabindex="-1">Recordatorio Turnos</button>
+  </div>
+
+  <div role="tabpanel" id="panel-flyers" aria-labelledby="tab-flyers">
   <main class="layout">
     <form id="form" class="panel" novalidate autocomplete="off">
       <p class="note">Los campos con * son obligatorios. El complejo, el logo y los contactos se guardan en este navegador.</p>
@@ -89,23 +98,7 @@
     </form>
 
     <section class="results">
-      <div class="toolbar">
-        <div class="tool">
-          <span class="label" id="theme-label">Tema del flyer</span>
-          <div class="segmented" role="group" aria-labelledby="theme-label">
-            <button type="button" data-flyer-theme="dark" aria-pressed="true">Oscuro</button>
-            <button type="button" data-flyer-theme="light" aria-pressed="false">Claro</button>
-          </div>
-        </div>
-        <div class="tool">
-          <span class="label" id="palette-label">Paleta: <strong id="palette-name"></strong></span>
-          <div id="palettes" class="palettes" role="group" aria-labelledby="palette-label"></div>
-        </div>
-        <div class="tool">
-          <span class="label" id="pattern-label">Fondo</span>
-          <div id="patterns" class="patterns" role="group" aria-labelledby="pattern-label"></div>
-        </div>
-      </div>
+      <div class="toolbar" id="flyer-toolbar"></div>
 
       <div id="empty" class="empty" aria-live="polite">
         <h2>Todavía faltan datos</h2>
@@ -116,10 +109,108 @@
     </section>
   </main>
 
+  </div>
+
+  <div role="tabpanel" id="panel-turnos" aria-labelledby="tab-turnos" hidden>
+    <main class="layout">
+      <form id="t-form" class="panel" novalidate autocomplete="off">
+        <p class="note">Los campos con * son obligatorios. El lugar, la cancha y los jugadores se guardan en este navegador.</p>
+
+        <div class="field two">
+          <div>
+            <label for="t-fecha">Fecha *</label>
+            <input id="t-fecha" name="fecha" type="date" required>
+          </div>
+          <div>
+            <label for="t-hora">Hora *</label>
+            <input id="t-hora" name="hora" type="time" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="t-lugar">Lugar *</label>
+          <input id="t-lugar" name="lugar" type="text" maxlength="40" placeholder="Complejo o dirección">
+        </div>
+
+        <div class="field">
+          <label for="t-cancha">Cancha</label>
+          <input id="t-cancha" name="cancha" type="text" maxlength="24" placeholder="Ej: Cancha 2">
+        </div>
+
+        <div class="field">
+          <span class="label">Jugadores <small>(hasta 4)</small></span>
+          <div class="players-grid">
+            <input type="text" name="j1" maxlength="24" placeholder="Jugador 1" aria-label="Jugador 1">
+            <input type="text" name="j2" maxlength="24" placeholder="Jugador 2" aria-label="Jugador 2">
+            <input type="text" name="j3" maxlength="24" placeholder="Jugador 3" aria-label="Jugador 3">
+            <input type="text" name="j4" maxlength="24" placeholder="Jugador 4" aria-label="Jugador 4">
+          </div>
+        </div>
+
+        <button type="button" id="t-clear" class="link">Borrar datos guardados</button>
+      </form>
+
+      <section class="results">
+        <div class="toolbar" id="t-toolbar"></div>
+
+        <div id="t-empty" class="empty" aria-live="polite">
+          <h2>Todavía faltan datos</h2>
+          <ul id="t-missing"></ul>
+        </div>
+
+        <div id="t-gallery" class="gallery" hidden></div>
+      </section>
+    </main>
+  </div>
+
   <footer class="credit">
     🎾 Desarrollado por Federico Olego 🎾
     <small id="app-version" class="version"></small>
   </footer>
+
+  <dialog id="help" aria-labelledby="help-title">
+    <div class="help-box">
+      <div class="help-head">
+        <h2 id="help-title">¿Cómo funciona?</h2>
+        <button type="button" id="help-close" class="help-close" aria-label="Cerrar ayuda">✕</button>
+      </div>
+      <p class="help-intro">Pádel Studio arma imágenes listas para mandar por WhatsApp. Tiene dos pestañas:</p>
+
+      <details data-help="flyers" open>
+        <summary>Flyers Torneos</summary>
+        <p><strong>Qué hace:</strong> genera 6 flyers distintos de un torneo de pádel (formato 4:5) con el complejo, la categoría, las fechas, la inscripción, el premio y los contactos.</p>
+        <ol>
+          <li>Completá los campos con * : complejo, al menos una categoría, fecha de inicio y un contacto con nombre y teléfono.</li>
+          <li>Opcional: logo, hora, fecha de fin, inscripción y premio. Con hasta 3 categorías armás un solo flyer para varios torneos a la vez.</li>
+          <li>Los flyers aparecen solos a la derecha (o abajo, en el celular). Elegí tema, paleta y fondo.</li>
+          <li>Descargá el que más te guste o compartilo por WhatsApp.</li>
+        </ol>
+        <p class="help-tip">El complejo, el logo y los contactos quedan guardados en este navegador para no cargarlos en cada torneo.</p>
+      </details>
+
+      <details data-help="turnos">
+        <summary>Recordatorio Turnos</summary>
+        <p><strong>Qué hace:</strong> genera 6 imágenes de recordatorio de un turno de pádel con el día, la hora, el lugar, la cancha y los jugadores, para mandar al grupo.</p>
+        <ol>
+          <li>Completá los campos con * : fecha, hora y lugar. La fecha arranca en hoy.</li>
+          <li>Opcional: cancha y hasta 4 jugadores. Si el turno es hoy o mañana, la imagen lo marca.</li>
+          <li>Elegí tema, paleta y fondo de las imágenes.</li>
+          <li>Descargá la que quieras o compartila por WhatsApp.</li>
+        </ol>
+        <p class="help-tip">El lugar, la cancha y los jugadores quedan guardados en este navegador; la fecha y la hora se cargan cada vez.</p>
+      </details>
+
+      <details>
+        <summary>Compartir y otros botones</summary>
+        <ul>
+          <li><strong>Celular:</strong> el botón verde de WhatsApp abre el menú de compartir con la imagen, sin texto.</li>
+          <li><strong>Compu:</strong> descarga la imagen, la copia al portapapeles y abre WhatsApp Web: pegala en el chat con Ctrl+V.</li>
+          <li><strong>🌙 / ☀️</strong> arriba a la derecha cambia el tema de la app (no el de las imágenes).</li>
+          <li>Si aparece el cartel <em>"Hay una versión nueva"</em>, tocá Actualizar para ver los últimos cambios.</li>
+        </ul>
+      </details>
+    </div>
+  </dialog>
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>

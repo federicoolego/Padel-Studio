@@ -1,8 +1,17 @@
-# Flyers de torneos de pádel
+# Pádel Studio
 
-App web estática (HTML + CSS + JS, sin build ni dependencias) que genera **6 flyers distintos** de un torneo de pádel, en formato 4:5 (1080×1350 px), listos para compartir por WhatsApp.
+App web estática (HTML + CSS + JS, sin build ni dependencias) con dos pestañas para generar imágenes de pádel en formato 4:5 (1080×1350 px), listas para compartir por WhatsApp:
 
-## Modelos
+| Pestaña | Qué genera |
+| --- | --- |
+| **Flyers Torneos** | 6 flyers distintos de un torneo de pádel. |
+| **Recordatorio Turnos** | 6 imágenes de recordatorio de un turno de pádel. |
+
+El icono **?** de arriba a la derecha abre un instructivo con lo que hace cada pestaña. El tema de la app (🌙/☀️) está al lado.
+
+## Flyers Torneos
+
+### Modelos
 
 | Modelo | Idea |
 | --- | --- |
@@ -13,7 +22,7 @@ App web estática (HTML + CSS + JS, sin build ni dependencias) que genera **6 fl
 | **Ticket** | Entrada con muescas y línea de corte. |
 | **Calendario** | Hoja de almanaque con el día en grande. |
 
-## Personalización de los flyers
+### Personalización de los flyers
 
 - **Tema:** oscuro o claro.
 - **Paleta:** Cancha, Césped, Arcilla, Violeta, Rojo, Turquesa y Grafito.
@@ -21,7 +30,7 @@ App web estática (HTML + CSS + JS, sin build ni dependencias) que genera **6 fl
 
 La elección se recuerda en el navegador.
 
-## Campos
+### Campos
 
 | Campo | Obligatorio |
 | --- | --- |
@@ -36,7 +45,7 @@ La elección se recuerda en el navegador.
 
 Todos los flyers muestran el nombre del complejo una sola vez y en grande, precedido por el logo (o por un pin de ubicación si no hay logo), y la nota "Inscripción abierta" antes de los contactos.
 
-## Datos guardados en el navegador
+### Datos guardados en el navegador
 
 La app recuerda automáticamente (localStorage) el **nombre del complejo**, el **logo** y los **contactos**, para no cargarlos en cada torneo. Categorías, fechas, inscripción y premio se cargan cada vez. También se recuerdan el tema, la paleta y el fondo elegidos.
 
@@ -44,9 +53,42 @@ La app recuerda automáticamente (localStorage) el **nombre del complejo**, el *
 - No persiste en ventanas privadas ni si se borran los datos del sitio.
 - El botón "Borrar datos guardados" (abajo del formulario) elimina el complejo, el logo y los contactos.
 
+## Recordatorio Turnos
+
+Genera 6 imágenes con el día, la hora, el lugar, la cancha y los jugadores del turno, más el cartel "Confirmado" y la frase "¡Nos vemos en la cancha!".
+
+### Modelos
+
+| Modelo | Idea |
+| --- | --- |
+| **Tarjeta** | Panel con una fila e ícono por dato (fecha, hora, lugar, cancha). |
+| **Hora** | La hora en gigante y el resto de los datos debajo. |
+| **Pelota** | La hora dentro de una pelota de tenis. |
+| **Cancha** | La cancha vista desde arriba, con el nombre de la cancha en el centro. |
+| **Ticket** | Entrada con muescas y línea de corte. |
+| **Calendario** | Hoja de almanaque con el día en grande. |
+
+Mismas opciones que los flyers: **tema** oscuro o claro, **paleta** (7) y **fondo** (Auto, Liso, Cancha, Rayas, Malla, Puntos, Círculos). Las opciones de cada pestaña se recuerdan por separado.
+
+### Campos
+
+| Campo | Obligatorio |
+| --- | --- |
+| Fecha (arranca en hoy) | Sí |
+| Hora | Sí |
+| Lugar | Sí |
+| Cancha (si es solo un número, la imagen dice "Cancha 2") | No |
+| Jugadores (hasta 4) | No |
+
+Si el turno es hoy o mañana, las imágenes lo marcan con un cartelito **HOY** / **MAÑANA**. Las imágenes llevan la marca "Desarrollado por Federico Olego" abajo.
+
+### Datos guardados en el navegador
+
+Se recuerdan (localStorage) el **lugar**, la **cancha** y los **jugadores**. La fecha y la hora se cargan cada vez. El botón "Borrar datos guardados" (abajo del formulario) los elimina.
+
 ## Compartir por WhatsApp
 
-Debajo de cada flyer hay un botón de descarga y uno de WhatsApp. **Se comparte solo la imagen, sin texto.**
+Debajo de cada imagen hay un botón de descarga y uno de WhatsApp. **Se comparte solo la imagen, sin texto.**
 
 - **Celular:** abre el menú nativo de compartir con la imagen adjunta.
 - **Escritorio:** descarga la imagen, la copia al portapapeles (si el navegador lo permite) y abre WhatsApp Web; en el chat se pega con Ctrl+V o se adjunta a mano.
@@ -75,7 +117,7 @@ El sitio se publica con GitHub Actions (`.github/workflows/deploy.yml`) para pod
 ```
 index.html   Formulario y contenedores
 styles.css   Estilos de la app (colores del sitio de proyectos)
-app.js       Validación, dibujo en canvas de cada modelo, compartir/descargar, aviso de versión
+app.js       Pestañas y ayuda, validación, dibujo en canvas de cada modelo (flyers y turnos), compartir/descargar, aviso de versión
 version.js   Versión que está corriendo (la regenera el deploy)
 version.json Versión publicada (la sube a mano; el build lo pone el deploy)
 .github/workflows/deploy.yml   Deploy a GitHub Pages con versión y build
@@ -85,5 +127,7 @@ version.json Versión publicada (la sube a mano; el build lo pone el deploy)
 
 - **Paletas:** arreglo `PALETTES` al inicio de `app.js`.
 - **Fondos:** función `drawPattern`.
-- **Nuevo modelo:** crear `tplXxx(ctx, data, theme, pattern)` y registrarlo en `TEMPLATES`.
+- **Nuevo modelo de flyer:** crear `tplXxx(ctx, data, theme, pattern)` y registrarlo en `TEMPLATES`.
+- **Nuevo modelo de turno:** crear `turnoXxx(ctx, data, theme, pattern)` y registrarlo en `TURNO_TEMPLATES`.
+- **Nombre de la app:** `<title>`, el `<h1>` y la descripción en `index.html`.
 - **Tema de la app:** comparte la clave `theme` de localStorage con https://federicoolego.github.io/federicoolego-/
