@@ -151,7 +151,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, label.btn:foc
 
 .contacts { display: grid; gap: 10px; margin-bottom: 10px; }
 .contact-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
-.contact-row .rm {
+.cat-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.contact-row .rm, .cat-row .rm {
   width: 36px; height: 36px;
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -161,7 +162,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, label.btn:foc
   line-height: 1;
   cursor: pointer;
 }
-.contact-row .rm.placeholder { visibility: hidden; }
+.contact-row .rm.placeholder, .cat-row .rm.placeholder { visibility: hidden; }
 
 /* Controles de los flyers */
 .toolbar {

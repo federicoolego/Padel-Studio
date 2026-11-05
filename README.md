@@ -27,8 +27,8 @@ La elección se recuerda en el navegador.
 | --- | --- |
 | Complejo | Sí |
 | Logo del complejo | No |
-| Categoría | Sí |
-| Fecha de inicio | Sí (hora opcional) |
+| Categorías (hasta 3 torneos en simultáneo) | Sí, al menos 1 |
+| Fecha de inicio | Sí (hora opcional; igual para todas las categorías) |
 | Fecha de fin | No (vacía = mismo día) |
 | Inscripción ($) | No |
 | Premio | No |

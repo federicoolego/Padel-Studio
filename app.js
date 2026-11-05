@@ -72,6 +72,8 @@
   const form = $('#form');
   const contactsEl = $('#contacts');
   const addContactBtn = $('#add-contact');
+  const categoriasEl = $('#categorias');
+  const addCategoriaBtn = $('#add-categoria');
   const logoInput = $('#logo');
   const logoChip = $('#logo-chip');
   const logoPreview = $('#logo-preview');
@@ -122,6 +124,35 @@
   }
 
   /* ------------------------------------------------------------------ *
+   *  Categorías (hasta 3 torneos en simultáneo)
+   * ------------------------------------------------------------------ */
+  function addCategoria() {
+    if (categoriasEl.children.length >= 3) return;
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+    row.innerHTML =
+      '<input type="text" name="cat" maxlength="40" placeholder="Categoría del torneo">' +
+      '<button type="button" class="rm" aria-label="Quitar categoría">×</button>';
+    row.querySelector('.rm').addEventListener('click', () => {
+      row.remove();
+      refreshCategorias();
+      schedule();
+    });
+    categoriasEl.appendChild(row);
+    refreshCategorias();
+  }
+
+  function refreshCategorias() {
+    [...categoriasEl.children].forEach((row, i) => {
+      row.querySelector('[name=cat]').setAttribute('aria-label', `Categoría ${i + 1}`);
+      const rm = row.querySelector('.rm');
+      rm.classList.toggle('placeholder', i === 0);
+      rm.tabIndex = i === 0 ? -1 : 0;
+    });
+    addCategoriaBtn.disabled = categoriasEl.children.length >= 3;
+  }
+
+  /* ------------------------------------------------------------------ *
    *  Lectura y validación de datos
    * ------------------------------------------------------------------ */
   function readData() {
@@ -133,11 +164,13 @@
     const completos = rows.filter(c => c.nombre && c.tel);
     const parciales = rows.filter(c => (c.nombre || c.tel) && !(c.nombre && c.tel));
 
+    const categorias = [...categoriasEl.querySelectorAll('[name=cat]')].map(i => i.value.trim()).filter(Boolean);
     const digits = v('inscripcion').replace(/\D/g, '');
     const data = {
       complejo: v('complejo'),
       logo: state.logo,
-      categoria: v('categoria'),
+      categorias,
+      torneoLabel: categorias.length > 1 ? 'Torneos de pádel' : 'Torneo de pádel',
       inicio: v('inicio'),
       hora: v('hora'),
       fin: v('fin'),
@@ -148,7 +181,7 @@
 
     const missing = [];
     if (!data.complejo) missing.push('Nombre del complejo');
-    if (!data.categoria) missing.push('Categoría del torneo');
+    if (!categorias.length) missing.push('Categoría del torneo');
     if (!data.inicio) missing.push('Fecha de inicio');
     if (data.inicio && data.fin && data.fin < data.inicio) missing.push('La fecha de fin no puede ser anterior a la de inicio');
     if (!completos.length) missing.push('Al menos un contacto con nombre y teléfono');
@@ -321,8 +354,25 @@
     return min;
   }
 
-  function layoutHeadline(ctx, text, { maxW, max, min, lines = 2, maxH = 0, weight = 900 }) {
-    const up = text.toUpperCase();
+  function layoutHeadline(ctx, input, { maxW, max, min, lines = 2, maxH = 0, weight = 900 }) {
+    const list = Array.isArray(input) ? input : [input];
+
+    // Varias categorías: una por línea, todas del mismo tamaño.
+    if (list.length > 1) {
+      const items = list.map(x => x.toUpperCase());
+      let size = Math.min(max, 150);
+      for (;;) {
+        ctx.font = `${weight} ${size}px ${DISPLAY}`;
+        const wide = items.every(l => ctx.measureText(l).width <= maxW);
+        const h = size * 0.78 + (items.length - 1) * size * 0.98;
+        if ((wide && (!maxH || h <= maxH)) || size <= 40) break;
+        size -= 4;
+      }
+      const lh = size * 0.98;
+      return { ls: items, size, lh, weight, height: size * 0.78 + (items.length - 1) * lh };
+    }
+
+    const up = list[0].toUpperCase();
     let size = max;
     let ls;
     for (;;) {
@@ -556,9 +606,9 @@
   function tplBanda(ctx, d, t, pattern) {
     bgFill(ctx, t, pattern);
     header(ctx, d, t, 150, 120, null, 72);
-    pill(ctx, t, 'Torneo de pádel', M, 290, 'left');
+    pill(ctx, t, d.torneoLabel, M, 290, 'left');
 
-    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 210, min: 100, maxH: 270 });
+    const L = layoutHeadline(ctx, d.categorias, { maxW: W - 2 * M, max: 210, min: 100, maxH: 270 });
     const blockH = L.height + 40 + 14;
     const top = 370 + (330 - blockH) / 2;
     const bottom = drawHeadline(ctx, L, M, top, 'left', t.ink);
@@ -603,8 +653,8 @@
     ctx.fillRect(0, 200, W, 8);
     header(ctx, d, t, 102, 112, null, 58);
 
-    let y = pill(ctx, t, 'Torneo de pádel', M, 250, 'left');
-    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 170, min: 90, maxH: 260 });
+    let y = pill(ctx, t, d.torneoLabel, M, 250, 'left');
+    const L = layoutHeadline(ctx, d.categorias, { maxW: W - 2 * M, max: 170, min: 90, maxH: 260 });
     y = drawHeadline(ctx, L, M, y + 34, 'left', t.ink);
 
     const info = dateInfo(d);
@@ -690,10 +740,10 @@
 
     ctx.font = `600 32px ${TEXT}`;
     ctx.fillStyle = t.muted;
-    ctx.fillText('Torneo de pádel', W / 2, y + 28);
+    ctx.fillText(d.torneoLabel, W / 2, y + 28);
     y += 42;
 
-    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 200, min: 90, maxH: 300 });
+    const L = layoutHeadline(ctx, d.categorias, { maxW: W - 2 * M, max: 200, min: 90, maxH: 300 });
     y = drawHeadline(ctx, L, W / 2, y, 'center', t.ink) + 44;
 
     // Alto del bloque inscripción / premio / dirección
@@ -774,9 +824,9 @@
     ctx.fillStyle = t.onAccent;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText('Torneo de pádel', M, 306);
+    ctx.fillText(d.torneoLabel, M, 306);
 
-    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 230, min: 90, maxH: 260 });
+    const L = layoutHeadline(ctx, d.categorias, { maxW: W - 2 * M, max: 230, min: 90, maxH: 260 });
     drawHeadline(ctx, L, M, 336, 'left', t.onAccent);
 
     // Pelota decorativa debajo del corte
@@ -843,10 +893,10 @@
     let yy = centerName(ctx, d, t, { cx, y: y + 54, maxW: w - 120, nameSize: 58, logoSize: 104 }) + 6;
     ctx.font = `600 30px ${TEXT}`;
     ctx.fillStyle = t.muted;
-    ctx.fillText('Torneo de pádel', cx, yy + 30);
+    ctx.fillText(d.torneoLabel, cx, yy + 30);
     yy += 50;
 
-    const L = layoutHeadline(ctx, d.categoria, { maxW: w - 120, max: 170, min: 80, maxH: ny - 44 - yy });
+    const L = layoutHeadline(ctx, d.categorias, { maxW: w - 120, max: 170, min: 80, maxH: ny - 44 - yy });
     drawHeadline(ctx, L, cx, yy, 'center', t.ink);
 
     // Línea de corte
@@ -886,8 +936,8 @@
     ctx.fillStyle = t.muted;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText('Torneo de pádel', M, 276);
-    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 190, min: 90, maxH: 240 });
+    ctx.fillText(d.torneoLabel, M, 276);
+    const L = layoutHeadline(ctx, d.categorias, { maxW: W - 2 * M, max: 190, min: 90, maxH: 240 });
     drawHeadline(ctx, L, M, 298, 'left', t.ink);
 
     // Hoja de calendario
@@ -1102,7 +1152,14 @@
   }
 
   function buildText(d) {
-    const lines = [`🎾 Torneo ${d.categoria} - ${d.complejo}`, `📅 ${dateLong(d)}`, `📍 ${d.complejo}`];
+    const lines = [];
+    if (d.categorias.length > 1) {
+      lines.push(`🎾 Torneos de pádel - ${d.complejo}`);
+      d.categorias.forEach(c => lines.push(`▪️ ${c}`));
+    } else {
+      lines.push(`🎾 Torneo ${d.categorias[0]} - ${d.complejo}`);
+    }
+    lines.push(`📅 ${dateLong(d)}`, `📍 ${d.complejo}`);
     if (d.inscripcion) lines.push(`💰 Inscripción: ${d.inscripcion}`);
     if (d.premio) lines.push(`🏆 Premio: ${d.premio}`);
     lines.push('✅ Inscripción abierta');
@@ -1127,7 +1184,7 @@
     const { data } = readData();
     const canvas = $(`.flyer[data-template="${key}"] canvas`);
     const blob = state.blobs[key] || await toBlob(canvas);
-    const name = `flyer-${key}-${slug(data.categoria) || 'torneo'}.png`;
+    const name = `flyer-${key}-${slug(data.categorias[0]) || 'torneo'}.png`;
     return { data, blob, name };
   }
 
@@ -1196,6 +1253,7 @@
   });
 
   addContactBtn.addEventListener('click', () => { addContact(); schedule(); });
+  addCategoriaBtn.addEventListener('click', () => { addCategoria(); schedule(); });
 
   logoInput.addEventListener('change', () => {
     const file = logoInput.files && logoInput.files[0];
@@ -1253,6 +1311,7 @@
   buildPalettes();
   buildPatterns();
   syncControls();
+  addCategoria();
   addContact();
   render();
 })();
