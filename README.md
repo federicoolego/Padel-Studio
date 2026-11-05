@@ -34,13 +34,13 @@ La elección se recuerda en el navegador.
 | Premio | No |
 | Contactos (nombre + teléfono) | Sí, de 1 a 3 |
 
-En todos los flyers se muestra un pin de ubicación con "Dirección:" y el nombre del complejo.
+Todos los flyers muestran el nombre del complejo bien grande (encabezado y pin de ubicación) y la nota "Inscripción abierta" antes de los contactos.
 
 ## Compartir por WhatsApp
 
 Debajo de cada flyer hay un botón de descarga y uno de WhatsApp.
 
-- **Celular:** abre el menú nativo de compartir con la imagen y un texto armado (categoría, fecha, dirección, inscripción, premio y contactos).
+- **Celular:** abre el menú nativo de compartir con la imagen y un texto armado (categoría, fecha, lugar, inscripción abierta, premio y contactos).
 - **Escritorio:** descarga la imagen y abre WhatsApp Web con el texto listo; la imagen se adjunta a mano.
 
 > La Web Share API con archivos requiere HTTPS (GitHub Pages ya lo da).
