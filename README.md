@@ -1,16 +1,25 @@
 # Flyers de torneos de pádel
 
-App web estática (HTML + CSS + JS, sin build ni dependencias) que genera **3 flyers distintos** de un torneo de pádel, en formato 4:5 (1080×1350 px), listos para compartir por WhatsApp.
+App web estática (HTML + CSS + JS, sin build ni dependencias) que genera **6 flyers distintos** de un torneo de pádel, en formato 4:5 (1080×1350 px), listos para compartir por WhatsApp.
 
 ## Modelos
 
 | Modelo | Idea |
 | --- | --- |
-| **Cancha** | Líneas de cancha de fondo, categoría gigante y fecha en una banda de color. |
+| **Banda** | Categoría gigante y fecha en una banda de color. |
 | **Marcador** | Datos en una tabla estilo scoreboard. |
 | **Pelota** | Composición centrada con la fecha dentro de una pelota. |
+| **Afiche** | Bloque diagonal de color con el título. |
+| **Ticket** | Entrada con muescas y línea de corte. |
+| **Calendario** | Hoja de almanaque con el día en grande. |
 
-Cada flyer se ve en tema **oscuro** o **claro** (selector arriba de los flyers).
+## Personalización de los flyers
+
+- **Tema:** oscuro o claro.
+- **Paleta:** Cancha, Césped, Arcilla, Violeta, Rojo, Turquesa y Grafito.
+- **Fondo:** Auto (cada modelo trae el suyo), Liso, Cancha, Rayas, Malla, Puntos o Círculos.
+
+La elección se recuerda en el navegador.
 
 ## Campos
 
@@ -18,20 +27,20 @@ Cada flyer se ve en tema **oscuro** o **claro** (selector arriba de los flyers).
 | --- | --- |
 | Complejo | Sí |
 | Logo del complejo | No |
-| Categoría (ej: Suma 10 Caballeros) | Sí |
+| Categoría | Sí |
 | Fecha de inicio | Sí (hora opcional) |
 | Fecha de fin | No (vacía = mismo día) |
 | Inscripción ($) | No |
 | Premio | No |
 | Contactos (nombre + teléfono) | Sí, de 1 a 3 |
 
-Los flyers aparecen cuando están completos los campos obligatorios; hasta entonces la app lista lo que falta.
+En todos los flyers se muestra un pin de ubicación con "Dirección:" y el nombre del complejo.
 
 ## Compartir por WhatsApp
 
-Cada flyer tiene un botón verde de WhatsApp y uno de descarga.
+Debajo de cada flyer hay un botón de descarga y uno de WhatsApp.
 
-- **Celular:** abre el menú nativo de compartir con la imagen y un texto armado (categoría, fecha, inscripción, premio y contactos). Elegís WhatsApp y el chat.
+- **Celular:** abre el menú nativo de compartir con la imagen y un texto armado (categoría, fecha, dirección, inscripción, premio y contactos).
 - **Escritorio:** descarga la imagen y abre WhatsApp Web con el texto listo; la imagen se adjunta a mano.
 
 > La Web Share API con archivos requiere HTTPS (GitHub Pages ya lo da).
@@ -42,18 +51,17 @@ Cada flyer tiene un botón verde de WhatsApp y uno de descarga.
 2. En **Settings → Pages**, elegí *Deploy from a branch* → `main` → `/ (root)`.
 3. La app queda en `https://<usuario>.github.io/<repo>/`.
 
-Para probarla en local alcanza con abrir `index.html` (las tipografías de Google Fonts necesitan internet; sin conexión se usan tipografías del sistema).
-
 ## Estructura
 
 ```
-index.html   Formulario y contenedores de los 3 flyers
-styles.css   Estilos de la interfaz (claro/oscuro según el sistema)
+index.html   Formulario y contenedores
+styles.css   Estilos de la app (colores del sitio de proyectos)
 app.js       Validación, dibujo en canvas de cada modelo, compartir/descargar
 ```
 
 ## Personalizar
 
-- **Colores de los flyers:** objeto `THEMES` al inicio de `app.js` (`dark` y `light`).
-- **Tipografías:** constantes `DISPLAY` y `TEXT` en `app.js` y el `<link>` de Google Fonts en `index.html`.
-- **Nuevo modelo:** crear una función `tplXxx(ctx, data, theme)`, registrarla en `TEMPLATES` y agregar un `<figure class="flyer" data-template="xxx">` en `index.html`.
+- **Paletas:** arreglo `PALETTES` al inicio de `app.js`.
+- **Fondos:** función `drawPattern`.
+- **Nuevo modelo:** crear `tplXxx(ctx, data, theme, pattern)` y registrarlo en `TEMPLATES`.
+- **Tema de la app:** comparte la clave `theme` de localStorage con https://federicoolego.github.io/federicoolego-/
