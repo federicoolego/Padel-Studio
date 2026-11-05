@@ -65,7 +65,7 @@
   /* ------------------------------------------------------------------ *
    *  Estado y DOM
    * ------------------------------------------------------------------ */
-  const state = { theme: 'dark', palette: 'cancha', pattern: 'auto', logo: null, blobs: {} };
+  const state = { theme: 'dark', palette: 'cancha', pattern: 'auto', logo: null, logoData: null, blobs: {} };
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
@@ -1112,6 +1112,84 @@
   }
 
   /* ------------------------------------------------------------------ *
+   *  Perfil guardado en el navegador (complejo, logo y contactos)
+   * ------------------------------------------------------------------ */
+  const PROFILE_KEY = 'flyer-perfil';
+
+  function saveProfile() {
+    try {
+      const contactos = [...contactsEl.children].map(r => ({
+        nombre: r.querySelector('[name=cNombre]').value,
+        tel: r.querySelector('[name=cTel]').value
+      }));
+      localStorage.setItem(PROFILE_KEY, JSON.stringify({
+        complejo: form.elements.complejo.value,
+        logo: state.logoData,
+        contactos
+      }));
+    } catch (e) { /* sin storage o cuota llena: la app sigue funcionando */ }
+  }
+
+  function loadProfile() {
+    let p = null;
+    try { p = JSON.parse(localStorage.getItem(PROFILE_KEY)); } catch (e) { /* ignorar */ }
+    if (!p) return;
+    if (typeof p.complejo === 'string') form.elements.complejo.value = p.complejo;
+    if (Array.isArray(p.contactos) && p.contactos.length) {
+      const list = p.contactos.slice(0, 3);
+      while (contactsEl.children.length < list.length) addContact();
+      list.forEach((c, i) => {
+        const row = contactsEl.children[i];
+        row.querySelector('[name=cNombre]').value = c.nombre || '';
+        row.querySelector('[name=cTel]').value = c.tel || '';
+      });
+    }
+    if (typeof p.logo === 'string' && p.logo.startsWith('data:image/')) {
+      const img = new Image();
+      img.onload = () => {
+        state.logo = img;
+        state.logoData = p.logo;
+        logoPreview.src = p.logo;
+        logoChip.hidden = false;
+        render();
+      };
+      img.src = p.logo;
+    }
+  }
+
+  // Reduce el logo para que ocupe poco en localStorage.
+  function logoToDataURL(img) {
+    try {
+      const iw = img.naturalWidth || img.width || 300;
+      const ih = img.naturalHeight || img.height || 300;
+      const sc = Math.min(1, 512 / Math.max(iw, ih));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(iw * sc));
+      c.height = Math.max(1, Math.round(ih * sc));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      return c.toDataURL('image/png');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearProfile() {
+    try { localStorage.removeItem(PROFILE_KEY); } catch (e) { /* ignorar */ }
+    form.elements.complejo.value = '';
+    [...contactsEl.children].slice(1).forEach(r => r.remove());
+    const first = contactsEl.children[0];
+    first.querySelector('[name=cNombre]').value = '';
+    first.querySelector('[name=cTel]').value = '';
+    refreshContacts();
+    state.logo = null;
+    state.logoData = null;
+    logoInput.value = '';
+    logoChip.hidden = true;
+    render();
+    toast('Borramos los datos guardados de este navegador.');
+  }
+
+  /* ------------------------------------------------------------------ *
    *  Render
    * ------------------------------------------------------------------ */
   async function render() {
@@ -1141,7 +1219,7 @@
   let timer = null;
   function schedule() {
     clearTimeout(timer);
-    timer = setTimeout(render, 120);
+    timer = setTimeout(() => { saveProfile(); render(); }, 120);
   }
 
   /* ------------------------------------------------------------------ *
@@ -1262,8 +1340,10 @@
     const img = new Image();
     img.onload = () => {
       state.logo = img;
+      state.logoData = logoToDataURL(img);
       logoPreview.src = url;
       logoChip.hidden = false;
+      saveProfile();
       render();
     };
     img.onerror = () => {
@@ -1276,10 +1356,14 @@
 
   $('#logo-remove').addEventListener('click', () => {
     state.logo = null;
+    state.logoData = null;
     logoInput.value = '';
     logoChip.hidden = true;
+    saveProfile();
     render();
   });
+
+  $('#clear-saved').addEventListener('click', clearProfile);
 
   $('.toolbar').addEventListener('click', e => {
     const th = e.target.closest('[data-flyer-theme]');
@@ -1313,5 +1397,6 @@
   syncControls();
   addCategoria();
   addContact();
+  loadProfile();
   render();
 })();

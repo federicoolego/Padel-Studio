@@ -36,6 +36,14 @@ La elección se recuerda en el navegador.
 
 Todos los flyers muestran el nombre del complejo una sola vez y en grande, precedido por el logo (o por un pin de ubicación si no hay logo), y la nota "Inscripción abierta" antes de los contactos.
 
+## Datos guardados en el navegador
+
+La app recuerda automáticamente (localStorage) el **nombre del complejo**, el **logo** y los **contactos**, para no cargarlos en cada torneo. Categorías, fechas, inscripción y premio se cargan cada vez. También se recuerdan el tema, la paleta y el fondo elegidos.
+
+- Se guarda por navegador y por dispositivo: no se comparte entre el celular y la compu.
+- No persiste en ventanas privadas ni si se borran los datos del sitio.
+- El botón "Borrar datos guardados" (abajo del formulario) elimina el complejo, el logo y los contactos.
+
 ## Compartir por WhatsApp
 
 Debajo de cada flyer hay un botón de descarga y uno de WhatsApp.
