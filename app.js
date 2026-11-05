@@ -369,21 +369,54 @@
     ctx.stroke();
   }
 
-  // Logo + nombre del complejo alineados a la izquierda, centrados verticalmente en cy.
-  function header(ctx, d, t, cy, size, color) {
+  // Ajusta el nombre del complejo: hasta 2 líneas, lo más grande posible.
+  function fitName(ctx, name, maxW, size) {
+    let s = size, lines;
+    for (;;) {
+      ctx.font = `700 ${s}px ${TEXT}`;
+      lines = wrapLines(ctx, name, maxW);
+      if ((lines.length <= 2 && lines.every(l => ctx.measureText(l).width <= maxW)) || s <= 36) break;
+      s -= 2;
+    }
+    if (lines.length > 2) lines = wrapLines(ctx, name, maxW, 2);
+    return { lines, size: s, lh: s * 1.12 };
+  }
+
+  // Encabezado: logo (o pin de ubicación) + nombre del complejo, una sola vez y en grande.
+  function header(ctx, d, t, cy, size, color, nameSize = 72, pinColor) {
     let tx = M;
     if (d.logo) {
       drawLogo(ctx, d.logo, M + size / 2, cy, size, t);
       tx = M + size + 28;
+    } else {
+      const ph = nameSize * 0.95;
+      drawPin(ctx, M, cy - ph / 2, ph, pinColor || t.accent);
+      tx = M + ph * 0.7 + 20;
     }
-    ctx.font = `700 50px ${TEXT}`;
-    const lines = wrapLines(ctx, d.complejo, W - M - tx, 2);
-    const lh = 58;
-    const top = cy - (lines.length * lh) / 2;
+    const N = fitName(ctx, d.complejo, W - M - tx, nameSize);
     ctx.fillStyle = color || t.ink;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    lines.forEach((l, i) => ctx.fillText(l, tx, top + i * lh + 41));
+    const top = cy - (N.lines.length * N.lh) / 2;
+    N.lines.forEach((l, i) => ctx.fillText(l, tx, top + i * N.lh + N.size * 0.82));
+  }
+
+  // Igual que header, pero centrado. Devuelve el y inferior.
+  function centerName(ctx, d, t, { cx, y, maxW, nameSize, logoSize }) {
+    if (d.logo) {
+      drawLogo(ctx, d.logo, cx, y + logoSize / 2, logoSize, t);
+      y += logoSize + 20;
+    } else {
+      const ph = nameSize * 0.9;
+      drawPin(ctx, cx - ph * 0.35, y, ph, t.accent);
+      y += ph + 12;
+    }
+    const N = fitName(ctx, d.complejo, maxW, nameSize);
+    ctx.fillStyle = t.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    N.lines.forEach((l, i) => ctx.fillText(l, cx, y + N.size * 0.82 + i * N.lh));
+    return y + N.lines.length * N.lh;
   }
 
   function pill(ctx, t, text, x, y, align) {
@@ -418,27 +451,6 @@
     ctx.fillStyle = color;
     ctx.fill(PIN, 'evenodd');
     ctx.restore();
-  }
-
-  // Pin + nombre del complejo (organizador / sede). y es la línea base del texto.
-  function drawLocation(ctx, t, name, { x, y, maxW, align = 'left', size = 46 }) {
-    let s = size, ph, pw, nw;
-    for (;;) {
-      ph = s * 1.05;
-      pw = ph * 0.7;
-      ctx.font = `700 ${s}px ${TEXT}`;
-      nw = ctx.measureText(name).width;
-      if (pw + 14 + nw <= maxW || s <= 24) break;
-      s -= 2;
-    }
-    const total = pw + 14 + nw;
-    const sx = align === 'center' ? x - total / 2 : align === 'right' ? x - total : x;
-    drawPin(ctx, sx, y - s * 0.92, ph, t.accent);
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-    ctx.font = `700 ${s}px ${TEXT}`;
-    ctx.fillStyle = t.ink;
-    ctx.fillText(name, sx + pw + 14, y);
   }
 
   // Nota "Inscripción abierta" con línea a los costados. y = borde superior (alto 46).
@@ -543,12 +555,12 @@
    * ------------------------------------------------------------------ */
   function tplBanda(ctx, d, t, pattern) {
     bgFill(ctx, t, pattern);
-    header(ctx, d, t, 150, 120);
-    pill(ctx, t, 'Torneo de pádel', M, 268, 'left');
+    header(ctx, d, t, 150, 120, null, 72);
+    pill(ctx, t, 'Torneo de pádel', M, 290, 'left');
 
-    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 210, min: 100, maxH: 280 });
+    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 210, min: 100, maxH: 270 });
     const blockH = L.height + 40 + 14;
-    const top = 340 + (350 - blockH) / 2;
+    const top = 370 + (330 - blockH) / 2;
     const bottom = drawHeadline(ctx, L, M, top, 'left', t.ink);
     roundRect(ctx, M, bottom + 40, 170, 14, 7);
     ctx.fillStyle = t.accent;
@@ -556,7 +568,7 @@
 
     // Banda de fecha
     const info = dateInfo(d);
-    const bandY = 715, bandH = 170;
+    const bandY = 735, bandH = 175;
     roundRect(ctx, M, bandY, W - 2 * M, bandH, 28);
     ctx.fillStyle = t.accent;
     ctx.fill();
@@ -573,8 +585,7 @@
       ctx.fillText(info.small, M + 40, by + 18 + 28);
     }
 
-    drawLocation(ctx, t, d.complejo, { x: M, y: 962, maxW: W - 2 * M });
-    infoCols(ctx, t, d, { x: M, w: W - 2 * M, y: 1018, priceSize: 84 });
+    infoCols(ctx, t, d, { x: M, w: W - 2 * M, y: 1006, priceSize: 88 });
 
     drawNote(ctx, t, { y: 1136 });
     drawContacts(ctx, t, d.contactos, { x: M, y: 1202, w: W - 2 * M });
@@ -590,10 +601,10 @@
     ctx.fillRect(0, 0, W, 200);
     ctx.fillStyle = t.accent;
     ctx.fillRect(0, 200, W, 8);
-    header(ctx, d, t, 100, 112);
+    header(ctx, d, t, 102, 112, null, 58);
 
     let y = pill(ctx, t, 'Torneo de pádel', M, 250, 'left');
-    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 150, min: 90, maxH: 240 });
+    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 170, min: 90, maxH: 260 });
     y = drawHeadline(ctx, L, M, y + 34, 'left', t.ink);
 
     const info = dateInfo(d);
@@ -601,7 +612,6 @@
     if (info.hora) rows.push({ label: 'Hora', value: info.hora, w: 1 });
     if (d.inscripcion) rows.push({ label: 'Inscripción', value: d.inscripcion, w: 1 });
     if (d.premio) rows.push({ label: 'Premio', value: d.premio, w: 1.5, wrap: true });
-    rows.push({ label: 'Sede', value: d.complejo, w: 1, pin: true });
 
     const footTop = 1110;
     const tableTop = y + 50;
@@ -676,18 +686,7 @@
     ctx.fillRect(0, 0, W, H);
     drawPattern(ctx, t, pattern);
 
-    let y = 60;
-    if (d.logo) {
-      drawLogo(ctx, d.logo, W / 2, y + 60, 120, t);
-      y += 120 + 24;
-    }
-    ctx.font = `700 52px ${TEXT}`;
-    const nameLines = wrapLines(ctx, d.complejo, W - 2 * M, 2);
-    ctx.fillStyle = t.ink;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    nameLines.forEach((l, i) => ctx.fillText(l, W / 2, y + 42 + i * 60));
-    y += nameLines.length * 60 + 12;
+    let y = centerName(ctx, d, t, { cx: W / 2, y: 56, maxW: W - 2 * M, nameSize: 66, logoSize: 100 }) + 8;
 
     ctx.font = `600 32px ${TEXT}`;
     ctx.fillStyle = t.muted;
@@ -706,8 +705,7 @@
       premioLines = wrapLines(ctx, 'Premio: ' + d.premio, W - 2 * M - 80, 2);
       infoH += (infoH ? 10 : 0) + premioLines.length * 42;
     }
-    infoH += (infoH ? 10 : 0) + 56;
-
+    
     const contactsTop = 1194;
     const noteTop = contactsTop - 58;
     const spaceBottom = noteTop - 22 - infoH - 24;
@@ -753,7 +751,6 @@
       premioLines.forEach((l, k) => ctx.fillText(l, W / 2, iy + 30 + k * 42));
       iy += premioLines.length * 42 + 10;
     }
-    drawLocation(ctx, t, d.complejo, { x: W / 2, y: iy + 44, maxW: W - 2 * M, align: 'center' });
 
     drawNote(ctx, t, { y: noteTop, align: 'center' });
     drawContacts(ctx, t, d.contactos, { x: M, y: contactsTop, w: W - 2 * M, align: 'center' });
@@ -771,16 +768,16 @@
     ctx.fillStyle = t.accent;
     ctx.fill();
 
-    header(ctx, d, t, 140, 120, t.onAccent);
+    header(ctx, d, t, 150, 120, t.onAccent, 72, t.onAccent);
 
     ctx.font = `700 34px ${TEXT}`;
     ctx.fillStyle = t.onAccent;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText('Torneo de pádel', M, 298);
+    ctx.fillText('Torneo de pádel', M, 306);
 
-    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 230, min: 90, maxH: 270 });
-    drawHeadline(ctx, L, M, 330, 'left', t.onAccent);
+    const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 230, min: 90, maxH: 260 });
+    drawHeadline(ctx, L, M, 336, 'left', t.onAccent);
 
     // Pelota decorativa debajo del corte
     drawBall(ctx, t, W - 150, 850, 96);
@@ -796,8 +793,7 @@
       ctx.fillText(info.small, M, 760 + 30 + bs * 0.78 + 50);
     }
 
-    infoCols(ctx, t, d, { x: M, w: W - 2 * M, y: 968, priceSize: 76 });
-    drawLocation(ctx, t, d.complejo, { x: M, y: 1120, maxW: W - 2 * M, size: 42 });
+    infoCols(ctx, t, d, { x: M, w: W - 2 * M, y: 1000, priceSize: 84 });
     drawNote(ctx, t, { y: 1138 });
     drawContacts(ctx, t, d.contactos, { x: M, y: 1204, w: W - 2 * M });
   }
@@ -844,18 +840,7 @@
     ctx.restore();
 
     const cx = W / 2;
-    let yy = y + 56;
-    if (d.logo) {
-      drawLogo(ctx, d.logo, cx, yy + 56, 112, t);
-      yy += 112 + 20;
-    }
-    ctx.font = `700 46px ${TEXT}`;
-    const nameLines = wrapLines(ctx, d.complejo, w - 120, 2);
-    ctx.fillStyle = t.ink;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    nameLines.forEach((l, i) => ctx.fillText(l, cx, yy + 36 + i * 54));
-    yy += nameLines.length * 54 + 6;
+    let yy = centerName(ctx, d, t, { cx, y: y + 54, maxW: w - 120, nameSize: 58, logoSize: 104 }) + 6;
     ctx.font = `600 30px ${TEXT}`;
     ctx.fillStyle = t.muted;
     ctx.fillText('Torneo de pádel', cx, yy + 30);
@@ -885,8 +870,7 @@
       ctx.fillText(info.small, cx, ny + 46 + bs * 0.78 + 50);
     }
 
-    infoCols(ctx, t, d, { x: x + 60, w: w - 120, y: 894, align: 'center', priceSize: 76 });
-    drawLocation(ctx, t, d.complejo, { x: cx, y: 1044, maxW: w - 120, align: 'center' });
+    infoCols(ctx, t, d, { x: x + 60, w: w - 120, y: 922, align: 'center', priceSize: 84 });
     drawNote(ctx, t, { y: 1084, align: 'center', x0: x + 60, x1: x + w - 60 });
     drawContacts(ctx, t, d.contactos, { x: x + 60, y: 1146, w: w - 120, align: 'center' });
   }
@@ -896,19 +880,19 @@
    * ------------------------------------------------------------------ */
   function tplCalendario(ctx, d, t, pattern) {
     bgFill(ctx, t, pattern);
-    header(ctx, d, t, 130, 112);
+    header(ctx, d, t, 140, 112, null, 66);
 
     ctx.font = `600 30px ${TEXT}`;
     ctx.fillStyle = t.muted;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText('Torneo de pádel', M, 250);
+    ctx.fillText('Torneo de pádel', M, 276);
     const L = layoutHeadline(ctx, d.categoria, { maxW: W - 2 * M, max: 190, min: 90, maxH: 240 });
-    drawHeadline(ctx, L, M, 272, 'left', t.ink);
+    drawHeadline(ctx, L, M, 298, 'left', t.ink);
 
     // Hoja de calendario
     const c = calInfo(d);
-    const cx0 = M, cy0 = 560, cw = 470, ch = 450, band = 112;
+    const cx0 = M, cy0 = 580, cw = 470, ch = 470, band = 112;
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,.25)';
     ctx.shadowBlur = 36;
@@ -978,7 +962,6 @@
       });
     }
 
-    drawLocation(ctx, t, d.complejo, { x: M, y: 1072, maxW: W - 2 * M });
     drawNote(ctx, t, { y: 1110 });
     drawContacts(ctx, t, d.contactos, { x: M, y: 1170, w: W - 2 * M });
   }

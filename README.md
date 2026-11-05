@@ -34,7 +34,7 @@ La elección se recuerda en el navegador.
 | Premio | No |
 | Contactos (nombre + teléfono) | Sí, de 1 a 3 |
 
-Todos los flyers muestran el nombre del complejo bien grande (encabezado y pin de ubicación) y la nota "Inscripción abierta" antes de los contactos.
+Todos los flyers muestran el nombre del complejo una sola vez y en grande, precedido por el logo (o por un pin de ubicación si no hay logo), y la nota "Inscripción abierta" antes de los contactos.
 
 ## Compartir por WhatsApp
 
