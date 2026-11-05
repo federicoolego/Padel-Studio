@@ -1180,23 +1180,36 @@
     return y - g;
   }
 
+  // Texto de una línea con ícono. Modo display = tipografía grande (para el lugar); se achica hasta entrar en 2 líneas.
+  function fitInfo(ctx, text, maxW, size, display) {
+    const fam = display ? DISPLAY : TEXT, fw = display ? 800 : 700;
+    const k = display ? 1.04 : 1.22, ik = display ? 0.92 : 1.05, gap = 20;
+    let s = size, lines;
+    for (;;) {
+      ctx.font = `${fw} ${s}px ${fam}`;
+      lines = wrapLines(ctx, text, maxW - s * ik - gap);
+      const ok = lines.length <= 2 && lines.every(l => ctx.measureText(l).width <= maxW - s * ik - gap);
+      if (!display || ok || s <= 44) break;
+      s -= 4;
+    }
+    if (lines.length > 2) lines = wrapLines(ctx, text, maxW - s * ik - gap, 2);
+    return { lines, s, fam, fw, lh: s * k, iconS: s * ik, gap, base: display ? 0.8 : 0.9 };
+  }
+
   // Línea con ícono + texto (hasta 2 líneas). y = borde superior. Devuelve el y inferior.
-  function infoLine(ctx, t, icon, text, { x, y, maxW, align = 'left', size = 44, fontW = 700 }) {
-    const iconS = size * 1.05, gap = 20, lh = size * 1.22;
-    ctx.font = `${fontW} ${size}px ${TEXT}`;
-    const lines = wrapLines(ctx, text, maxW - iconS - gap, 2);
-    const lw = Math.max(...lines.map(l => ctx.measureText(l).width));
-    const total = iconS + gap + lw;
+  function infoLine(ctx, t, icon, text, { x, y, maxW, align = 'left', size = 44, display = false }) {
+    const f = fitInfo(ctx, text, maxW, size, display);
+    const lw = Math.max(...f.lines.map(l => ctx.measureText(l).width));
+    const total = f.iconS + f.gap + lw;
     const sx = align === 'center' ? x - total / 2 : x;
-    const blockH = lines.length * lh;
-    drawIcon(ctx, icon, sx + iconS / 2, y + blockH / 2, iconS * 0.86, t.accent);
-    lines.forEach((l, i) => txt(ctx, l, sx + iconS + gap, y + size * 0.9 + i * lh, `${fontW} ${size}px ${TEXT}`, t.ink));
+    const blockH = f.lines.length * f.lh;
+    drawIcon(ctx, icon, sx + f.iconS / 2, y + blockH / 2, f.iconS * 0.86, t.accent);
+    f.lines.forEach((l, i) => txt(ctx, l, sx + f.iconS + f.gap, y + f.s * f.base + i * f.lh, `${f.fw} ${f.s}px ${f.fam}`, t.ink));
     return y + blockH;
   }
-  function infoLineHeight(ctx, text, { maxW, size = 44, fontW = 700 }) {
-    const iconS = size * 1.05, gap = 20;
-    ctx.font = `${fontW} ${size}px ${TEXT}`;
-    return wrapLines(ctx, text, maxW - iconS - gap, 2).length * size * 1.22;
+  function infoLineHeight(ctx, text, { maxW, size = 44, display = false }) {
+    const f = fitInfo(ctx, text, maxW, size, display);
+    return f.lines.length * f.lh;
   }
 
   // Jugadores como "chips" en filas.
@@ -1244,7 +1257,7 @@
 
   function turnoFooter(ctx, t, cx = W / 2, y = 1236, color) {
     txt(ctx, FRASE, cx, y, `700 42px ${TEXT}`, color || t.ink, 'center');
-    txt(ctx, CREDITO, cx, y + 52, `600 24px ${TEXT}`, t.muted, 'center');
+    txt(ctx, `🎾 ${CREDITO} 🎾`, cx, y + 56, `700 30px ${TEXT}`, t.muted, 'center');
   }
 
   // Hora en grande + "HS". Busca el mayor tamaño (<= maxS) que entra en maxW.
@@ -1267,12 +1280,14 @@
   function turnoTarjeta(ctx, d, t, pattern) {
     bgFill(ctx, t, pattern);
     const info = turnoInfo(d);
-    const rows = turnoRows(d, info);
+    const rows = turnoRows(d, info).map(r => ({ ...r, big: r.key !== 'Cancha' }));
     const px = M, pw = W - 2 * M, inner = pw - 80;
-    const headH = 250, padB = 36;
+    const headH = 190, padB = 36;
     const playersH = d.jugadores.length ? 30 + playersHeight(ctx, d.jugadores, inner) : 0;
-    const rowH = Math.max(150, Math.min(190, (1110 - headH - playersH - padB) / rows.length));
-    const ph = headH + rows.length * rowH + playersH + padB;
+    const base = rows.reduce((a, r) => a + (r.big ? 165 : 124), 0);
+    const k = Math.max(1, Math.min(1.2, (1110 - headH - playersH - padB) / base));
+    rows.forEach(r => { r.h = (r.big ? 165 : 124) * k; });
+    const ph = headH + rows.reduce((a, r) => a + r.h, 0) + playersH + padB;
     const y0 = 70 + Math.max(0, (1110 - ph) / 2);
 
     ctx.save();
@@ -1291,17 +1306,17 @@
     ctx.fillRect(px, y0, pw, headH);
     ctx.restore();
 
-    const ts = fitLine(ctx, 'TURNO DE PÁDEL', inner, 128, 60, 900, DISPLAY);
-    txt(ctx, 'TURNO DE PÁDEL', W / 2, y0 + 40 + ts * 0.78, `900 ${ts}px ${DISPLAY}`, t.onAccent, 'center');
-    ctx.font = `700 38px ${TEXT}`;
-    const cw = ctx.measureText('Confirmado').width + 58;
-    const cx0 = W / 2 - cw / 2, cyc = y0 + headH - 58;
-    drawCheck(ctx, cx0 + 22, cyc, 22, t.onAccent, t.accent);
-    txt(ctx, 'Confirmado', cx0 + 58, cyc + 13, `700 38px ${TEXT}`, t.onAccent);
+    const ts = fitLine(ctx, 'TURNO DE PÁDEL', inner, 88, 50, 900, DISPLAY);
+    txt(ctx, 'TURNO DE PÁDEL', W / 2, y0 + 32 + ts * 0.78, `900 ${ts}px ${DISPLAY}`, t.onAccent, 'center');
+    ctx.font = `700 34px ${TEXT}`;
+    const cw = ctx.measureText('Confirmado').width + 54;
+    const cx0 = W / 2 - cw / 2, cyc = y0 + headH - 44;
+    drawCheck(ctx, cx0 + 20, cyc, 20, t.onAccent, t.accent);
+    txt(ctx, 'Confirmado', cx0 + 54, cyc + 12, `700 34px ${TEXT}`, t.onAccent);
 
+    let ry = y0 + headH;
     rows.forEach((r, i) => {
-      const ry = y0 + headH + i * rowH;
-      const mid = ry + rowH / 2 + 4;
+      const mid = ry + r.h / 2;
       if (i > 0) {
         ctx.beginPath();
         ctx.moveTo(px + 40, ry); ctx.lineTo(px + pw - 40, ry);
@@ -1309,29 +1324,34 @@
         ctx.strokeStyle = t.line;
         ctx.stroke();
       }
+      const ir = r.big ? 52 : 40;
       ctx.beginPath();
-      ctx.arc(px + 40 + 46, mid, 46, 0, Math.PI * 2);
+      ctx.arc(px + 40 + ir, mid, ir, 0, Math.PI * 2);
       ctx.fillStyle = t.bg2;
       ctx.fill();
-      drawIcon(ctx, r.icon, px + 86, mid, 44, t.accent);
+      drawIcon(ctx, r.icon, px + 40 + ir, mid, ir * 0.95, t.accent);
 
-      const tx = px + 40 + 92 + 28;
-      txt(ctx, r.key.toUpperCase(), tx, mid - 18, `700 24px ${TEXT}`, t.muted);
+      const tx = px + 40 + ir * 2 + 28;
+      const vs0 = r.big ? 88 : 56;
       const bw = r.badge ? badgeWidth(ctx, r.badge) + 20 : 0;
-      const s = fitLine(ctx, r.val, px + pw - 40 - tx - bw, 68, 34, 800, DISPLAY);
+      const vs = fitLine(ctx, r.val, px + pw - 40 - tx - bw, vs0, 36, 800, DISPLAY);
       const vw = ctx.measureText(r.val).width;
-      txt(ctx, r.val, tx, mid + 22 + s * 0.4, `800 ${s}px ${DISPLAY}`, t.ink);
-      if (r.badge) drawBadge(ctx, t, r.badge, tx + vw + 20, mid + 22 + s * 0.4 - s * 0.36);
+      const total = 18 + 12 + vs * 0.78;
+      const kb = mid - total / 2 + 18;
+      txt(ctx, r.key.toUpperCase(), tx, kb, `700 ${r.big ? 24 : 22}px ${TEXT}`, t.muted);
+      const vb = kb + 12 + vs * 0.78;
+      txt(ctx, r.val, tx, vb, `800 ${vs}px ${DISPLAY}`, t.ink);
+      if (r.badge) drawBadge(ctx, t, r.badge, tx + vw + 20, vb - vs * 0.36);
+      ry += r.h;
     });
 
     if (d.jugadores.length) {
-      const ly = y0 + headH + rows.length * rowH;
       ctx.beginPath();
-      ctx.moveTo(px + 40, ly + 10); ctx.lineTo(px + pw - 40, ly + 10);
+      ctx.moveTo(px + 40, ry + 10); ctx.lineTo(px + pw - 40, ry + 10);
       ctx.lineWidth = 3;
       ctx.strokeStyle = t.line;
       ctx.stroke();
-      drawPlayers(ctx, t, d.jugadores, { x: px + 40, y: ly + 30, w: inner });
+      drawPlayers(ctx, t, d.jugadores, { x: px + 40, y: ry + 30, w: inner });
     }
     turnoFooter(ctx, t);
   }
@@ -1345,9 +1365,9 @@
     const maxW = W - 2 * M;
     const blocks = [
       { h: dateFit(ctx, info, maxW, 100).h, draw: y => dateLine(ctx, t, info, { x: M, y, maxW, size: 100 }) },
-      { h: infoLineHeight(ctx, d.lugar, { maxW }), draw: y => infoLine(ctx, t, 'pin', d.lugar, { x: M, y, maxW }) }
+      { h: infoLineHeight(ctx, d.lugar, { maxW, size: 80, display: true }), draw: y => infoLine(ctx, t, 'pin', d.lugar, { x: M, y, maxW, size: 80, display: true }) }
     ];
-    if (info.cancha) blocks.push({ h: infoLineHeight(ctx, info.cancha, { maxW }), draw: y => infoLine(ctx, t, 'court', info.cancha, { x: M, y, maxW }) });
+    if (info.cancha) blocks.push({ h: infoLineHeight(ctx, info.cancha, { maxW, size: 44 }), draw: y => infoLine(ctx, t, 'court', info.cancha, { x: M, y, maxW, size: 44 }) });
     if (d.jugadores.length) blocks.push({ h: playersHeight(ctx, d.jugadores, maxW), draw: y => drawPlayers(ctx, t, d.jugadores, { x: M, y, w: maxW }) });
     const gap = 34, tail = 40 + 14 + 52;
     const natural = blocks.reduce((a, b) => a + b.h, 0) + gap * (blocks.length - 1);
@@ -1386,13 +1406,13 @@
     const info = turnoInfo(d);
     const maxW = W - 2 * M;
     confirmPill(ctx, t, W / 2, 90, 'center');
-    const ts = fitLine(ctx, 'TURNO DE PÁDEL', maxW, 124, 60, 900, DISPLAY);
+    const ts = fitLine(ctx, 'TURNO DE PÁDEL', maxW, 84, 50, 900, DISPLAY);
     txt(ctx, 'TURNO DE PÁDEL', W / 2, 90 + 56 + 26 + ts * 0.78, `900 ${ts}px ${DISPLAY}`, t.ink, 'center');
     const top = 90 + 56 + 26 + ts * 0.92 + 30;
 
-    const dFit = dateFit(ctx, info, maxW, 92);
+    const dFit = dateFit(ctx, info, maxW, 112);
     const blocks = [
-      { h: infoLineHeight(ctx, d.lugar, { maxW, size: 42 }), draw: y => infoLine(ctx, t, 'pin', d.lugar, { x: W / 2, y, maxW, size: 42, align: 'center' }) }
+      { h: infoLineHeight(ctx, d.lugar, { maxW, size: 76, display: true }), draw: y => infoLine(ctx, t, 'pin', d.lugar, { x: W / 2, y, maxW, size: 76, display: true, align: 'center' }) }
     ];
     if (info.cancha) blocks.push({ h: infoLineHeight(ctx, info.cancha, { maxW, size: 42 }), draw: y => infoLine(ctx, t, 'court', info.cancha, { x: W / 2, y, maxW, size: 42, align: 'center' }) });
     if (d.jugadores.length) blocks.push({ h: playersHeight(ctx, d.jugadores, maxW), draw: y => drawPlayers(ctx, t, d.jugadores, { x: M, y, w: maxW, align: 'center' }) });
@@ -1410,7 +1430,7 @@
     txt(ctx, 'HS', W / 2, base + 14 + hs * 0.9, `800 ${hs}px ${DISPLAY}`, t.onBall, 'center');
 
     let y = cy + R + 36;
-    y = dateLine(ctx, t, info, { x: W / 2, y, maxW, size: 92, align: 'center' });
+    y = dateLine(ctx, t, info, { x: W / 2, y, maxW, size: 112, align: 'center' });
     flowBlocks(blocks, y + gap, 1160, gap, 30);
     turnoFooter(ctx, t);
   }
@@ -1465,20 +1485,20 @@
     const info = turnoInfo(d);
     const maxW = W - 2 * M;
     confirmPill(ctx, t, M, 90, 'left');
-    const ts = fitLine(ctx, 'TURNO DE PÁDEL', maxW, 116, 60, 900, DISPLAY);
+    const ts = fitLine(ctx, 'TURNO DE PÁDEL', maxW, 80, 50, 900, DISPLAY);
     txt(ctx, 'TURNO DE PÁDEL', M, 90 + 56 + 24 + ts * 0.78, `900 ${ts}px ${DISPLAY}`, t.ink);
     const top = 90 + 56 + 24 + ts * 0.92 + 40;
 
     const blocks = [
-      { h: dateFit(ctx, info, maxW, 92).h, draw: y => dateLine(ctx, t, info, { x: M, y, maxW, size: 92 }) },
+      { h: dateFit(ctx, info, maxW, 108).h, draw: y => dateLine(ctx, t, info, { x: M, y, maxW, size: 108 }) },
       {
-        h: 84,
+        h: 92,
         draw: y => {
-          drawIcon(ctx, 'clock', M + 28, y + 40, 46, t.accent);
-          txt(ctx, info.horaTxt, M + 28 + 46, y + 70, `800 80px ${DISPLAY}`, t.ink);
+          drawIcon(ctx, 'clock', M + 32, y + 44, 56, t.accent);
+          txt(ctx, info.horaTxt, M + 32 + 56, y + 74, `800 104px ${DISPLAY}`, t.ink);
         }
       },
-      { h: infoLineHeight(ctx, d.lugar, { maxW, size: 44 }), draw: y => infoLine(ctx, t, 'pin', d.lugar, { x: M, y, maxW }) }
+      { h: infoLineHeight(ctx, d.lugar, { maxW, size: 76, display: true }), draw: y => infoLine(ctx, t, 'pin', d.lugar, { x: M, y, maxW, size: 76, display: true }) }
     ];
     if (d.jugadores.length) blocks.push({ h: playersHeight(ctx, d.jugadores, maxW), draw: y => drawPlayers(ctx, t, d.jugadores, { x: M, y, w: maxW }) });
     const gap = 26;
@@ -1500,8 +1520,8 @@
     const x = 60, w = W - 120, nr = 36, cx = W / 2, inner = w - 120;
 
     const blocks = [
-      { h: dateFit(ctx, info, inner, 92).h, draw: yy => dateLine(ctx, t, info, { x: cx, y: yy, maxW: inner, size: 92, align: 'center' }) },
-      { h: infoLineHeight(ctx, d.lugar, { maxW: inner, size: 42 }), draw: yy => infoLine(ctx, t, 'pin', d.lugar, { x: cx, y: yy, maxW: inner, size: 42, align: 'center' }) }
+      { h: dateFit(ctx, info, inner, 104).h, draw: yy => dateLine(ctx, t, info, { x: cx, y: yy, maxW: inner, size: 104, align: 'center' }) },
+      { h: infoLineHeight(ctx, d.lugar, { maxW: inner, size: 72, display: true }), draw: yy => infoLine(ctx, t, 'pin', d.lugar, { x: cx, y: yy, maxW: inner, size: 72, display: true, align: 'center' }) }
     ];
     if (info.cancha) blocks.push({ h: infoLineHeight(ctx, info.cancha, { maxW: inner, size: 42 }), draw: yy => infoLine(ctx, t, 'court', info.cancha, { x: cx, y: yy, maxW: inner, size: 42, align: 'center' }) });
     if (d.jugadores.length) blocks.push({ h: playersHeight(ctx, d.jugadores, inner), draw: yy => drawPlayers(ctx, t, d.jugadores, { x: x + 60, y: yy, w: inner, align: 'center' }) });
@@ -1532,13 +1552,13 @@
     ctx.restore();
 
     confirmPill(ctx, t, cx, y + 60, 'center');
-    const ts = fitLine(ctx, 'TURNO DE PÁDEL', inner, 112, 56, 900, DISPLAY);
+    const ts = fitLine(ctx, 'TURNO DE PÁDEL', inner, 72, 44, 900, DISPLAY);
     txt(ctx, 'TURNO DE PÁDEL', cx, y + 60 + 56 + 26 + ts * 0.78, `900 ${ts}px ${DISPLAY}`, t.ink, 'center');
     const topY = y + 60 + 56 + 26 + ts * 0.92 + 26;
 
     // Hora grande entre el título y la línea de corte
     const avail = ny - 56 - topY;
-    const hero = heroTime(ctx, info.hora, inner, Math.min(300, Math.floor(avail / 0.78)), 90, 20);
+    const hero = heroTime(ctx, info.hora, inner, Math.min(330, Math.floor(avail / 0.78)), 90, 20);
     const total = hero.tw + hero.gap + hero.hw;
     const base = topY + (avail - hero.S * 0.78) / 2 + hero.S * 0.78;
     txt(ctx, info.hora, cx - total / 2, base, `900 ${hero.S}px ${DISPLAY}`, t.accent);
@@ -1564,7 +1584,7 @@
     bgFill(ctx, t, pattern);
     const info = turnoInfo(d);
     confirmPill(ctx, t, M, 96, 'left');
-    const ts = fitLine(ctx, 'TURNO DE PÁDEL', W - 2 * M, 124, 60, 900, DISPLAY);
+    const ts = fitLine(ctx, 'TURNO DE PÁDEL', W - 2 * M, 80, 50, 900, DISPLAY);
     txt(ctx, 'TURNO DE PÁDEL', M, 96 + 56 + 26 + ts * 0.78, `900 ${ts}px ${DISPLAY}`, t.ink);
 
     const cw = 470, ch = 470, band = 112;
@@ -1623,9 +1643,19 @@
     blocks.forEach(b => {
       txt(ctx, b.label, colX, by + 24, `600 28px ${TEXT}`, t.muted);
       if (b.big) {
-        const s = fitLine(ctx, b.value, colW, 96, 40, 900, DISPLAY);
+        const s = fitLine(ctx, b.value, colW, 112, 40, 900, DISPLAY);
         txt(ctx, b.value, colX, by + 24 + 18 + s * 0.78, `900 ${s}px ${DISPLAY}`, t.ink);
         by += 24 + 18 + s * 0.78 + 40;
+      } else if (b.label === 'Lugar') {
+        let fs = 72, ls;
+        for (;; fs -= 4) {
+          ctx.font = `800 ${fs}px ${DISPLAY}`;
+          ls = wrapLines(ctx, b.value, colW);
+          if ((ls.length <= 3 && ls.every(l => ctx.measureText(l).width <= colW)) || fs <= 40) break;
+        }
+        if (ls.length > 3) ls = wrapLines(ctx, b.value, colW, 3);
+        ls.forEach((l, k) => txt(ctx, l, colX, by + 24 + 14 + fs * 0.78 + k * fs * 1.04, `800 ${fs}px ${DISPLAY}`, t.ink));
+        by += 24 + 14 + fs * 0.78 + (ls.length - 1) * fs * 1.04 + 40;
       } else {
         ctx.font = `700 38px ${TEXT}`;
         const ls = wrapLines(ctx, b.value, colW, 3);

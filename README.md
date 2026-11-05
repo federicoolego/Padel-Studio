@@ -82,7 +82,7 @@ Mismas opciones que los flyers: **tema** oscuro o claro, **paleta** (7) y **fond
 | Cancha (si es solo un número, la imagen dice "Cancha 2") | No |
 | Jugadores (hasta 4) | No |
 
-Si el turno es hoy o mañana, las imágenes lo marcan con un cartelito **HOY** / **MAÑANA**. Las imágenes llevan la marca "Desarrollado por Federico Olego" abajo.
+Si el turno es hoy o mañana, las imágenes lo marcan con un cartelito **HOY** / **MAÑANA**. En todas las imágenes lo que más resalta es la **fecha**, la **hora** y el **lugar**. Llevan la marca "🎾 Desarrollado por Federico Olego 🎾" abajo, en negrita.
 
 ### Datos guardados en el navegador
 
