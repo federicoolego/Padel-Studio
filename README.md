@@ -46,25 +46,39 @@ La app recuerda automáticamente (localStorage) el **nombre del complejo**, el *
 
 ## Compartir por WhatsApp
 
-Debajo de cada flyer hay un botón de descarga y uno de WhatsApp.
+Debajo de cada flyer hay un botón de descarga y uno de WhatsApp. **Se comparte solo la imagen, sin texto.**
 
-- **Celular:** abre el menú nativo de compartir con la imagen y un texto armado (categoría, fecha, lugar, inscripción abierta, premio y contactos).
-- **Escritorio:** descarga la imagen y abre WhatsApp Web con el texto listo; la imagen se adjunta a mano.
+- **Celular:** abre el menú nativo de compartir con la imagen adjunta.
+- **Escritorio:** descarga la imagen, la copia al portapapeles (si el navegador lo permite) y abre WhatsApp Web; en el chat se pega con Ctrl+V o se adjunta a mano.
 
 > La Web Share API con archivos requiere HTTPS (GitHub Pages ya lo da).
 
 ## Publicar en GitHub Pages
 
-1. Subí estos archivos a la raíz del repo (rama `main`).
-2. En **Settings → Pages**, elegí *Deploy from a branch* → `main` → `/ (root)`.
-3. La app queda en `https://<usuario>.github.io/<repo>/`.
+El sitio se publica con GitHub Actions (`.github/workflows/deploy.yml`) para poder estampar la versión en cada deploy.
+
+1. Subí los archivos a la raíz del repo (rama `main`).
+2. En **Settings → Pages → Build and deployment → Source**, elegí **GitHub Actions** (una sola vez).
+3. En cada push a `main` se publica solo. La app queda en `https://<usuario>.github.io/<repo>/`.
+
+## Versión y aviso de actualización
+
+- La versión se sube **a mano** en `version.json` (`"version": "1.1.0"`) cuando hay cambios visibles para los usuarios. Se ve en el pie de página (`v1.0.0`; pasando el mouse, el build y la fecha).
+- En cada deploy, el workflow genera `version.json` y `version.js` con el **build** (commit corto) y la fecha. La app consulta `version.json` cada 5 minutos y al volver a la pestaña: si el build publicado es distinto del que está corriendo, muestra el cartel **"Hay una versión nueva · Actualizar"** (con "Más tarde" para ocultarlo hasta la próxima versión).
+- El cartel sale en cada deploy aunque no se cambie `version`; conviene subirla cuando hay cambios para que el usuario vea el número.
+- "Actualizar" recarga con `?v=<build>` para saltear la caché de GitHub Pages. Los archivos se cargan con `?v=<build>`, así que nadie queda con un `app.js` viejo.
+- Los datos que la app no guarda sola (categorías, fechas, inscripción, premio) se pierden al actualizar; el cartel lo avisa.
+- Local (sin Actions): `version.js` y `version.json` quedan con build `dev` y el cartel nunca aparece.
 
 ## Estructura
 
 ```
 index.html   Formulario y contenedores
 styles.css   Estilos de la app (colores del sitio de proyectos)
-app.js       Validación, dibujo en canvas de cada modelo, compartir/descargar
+app.js       Validación, dibujo en canvas de cada modelo, compartir/descargar, aviso de versión
+version.js   Versión que está corriendo (la regenera el deploy)
+version.json Versión publicada (la sube a mano; el build lo pone el deploy)
+.github/workflows/deploy.yml   Deploy a GitHub Pages con versión y build
 ```
 
 ## Personalizar

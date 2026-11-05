@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=__BUILD__">
 </head>
 <body>
   <header class="top">
@@ -116,7 +116,10 @@
     </section>
   </main>
 
-  <footer class="credit">🎾 Desarrollado por Federico Olego 🎾</footer>
+  <footer class="credit">
+    🎾 Desarrollado por Federico Olego 🎾
+    <small id="app-version" class="version"></small>
+  </footer>
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
@@ -125,6 +128,7 @@
   </svg>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js"></script>
+  <script src="version.js?v=__BUILD__"></script>
+  <script src="app.js?v=__BUILD__"></script>
 </body>
 </html>

@@ -235,15 +235,6 @@
     };
   }
 
-  function dateLong(d) {
-    const s = parseDate(d.inicio);
-    const e = d.fin ? parseDate(d.fin) : null;
-    const f = x => `${DIAS[x.getDay()]} ${x.getDate()} de ${MESES[x.getMonth()]}`;
-    let txt = isRange(s, e) ? `Del ${f(s)} al ${f(e)}` : cap(f(s));
-    if (d.hora) txt += `, ${d.hora} hs`;
-    return txt;
-  }
-
   /* ------------------------------------------------------------------ *
    *  Helpers de dibujo
    * ------------------------------------------------------------------ */
@@ -1229,22 +1220,6 @@
     return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
 
-  function buildText(d) {
-    const lines = [];
-    if (d.categorias.length > 1) {
-      lines.push(`🎾 Torneos de pádel - ${d.complejo}`);
-      d.categorias.forEach(c => lines.push(`▪️ ${c}`));
-    } else {
-      lines.push(`🎾 Torneo ${d.categorias[0]} - ${d.complejo}`);
-    }
-    lines.push(`📅 ${dateLong(d)}`, `📍 ${d.complejo}`);
-    if (d.inscripcion) lines.push(`💰 Inscripción: ${d.inscripcion}`);
-    if (d.premio) lines.push(`🏆 Premio: ${d.premio}`);
-    lines.push('✅ Inscripción abierta');
-    d.contactos.forEach(c => lines.push(`${c.nombre}: ${c.tel}`));
-    return lines.join('\n');
-  }
-
   const toBlob = canvas => new Promise(res => canvas.toBlob(res, 'image/png'));
 
   function download(blob, name) {
@@ -1267,23 +1242,33 @@
   }
 
   async function shareFlyer(key) {
-    const { data, blob, name } = await getFlyer(key);
-    const text = buildText(data);
+    const { blob, name } = await getFlyer(key);
     const file = new File([blob], name, { type: 'image/png' });
 
-    // Móvil: selector nativo (WhatsApp incluido) con la imagen adjunta.
+    // Móvil: selector nativo (WhatsApp incluido) con SOLO la imagen: sin texto ni título.
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], text });
+        await navigator.share({ files: [file] });
         return;
       } catch (err) {
         if (err && err.name === 'AbortError') return;
       }
     }
-    // Escritorio: descarga la imagen y abre WhatsApp con el texto listo.
+
+    // Escritorio: descarga la imagen, la copia al portapapeles (si el navegador deja)
+    // y abre WhatsApp Web sin texto, para pegarla (Ctrl+V) o adjuntarla en el chat.
     download(blob, name);
-    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
-    toast('Descargamos el flyer. Adjuntalo en el chat de WhatsApp.');
+    let copiada = false;
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        copiada = true;
+      }
+    } catch (_) { /* sin permiso: queda la descarga */ }
+    window.open('https://web.whatsapp.com/', '_blank', 'noopener');
+    toast(copiada
+      ? 'Descargamos el flyer y lo copiamos: pegalo en el chat de WhatsApp.'
+      : 'Descargamos el flyer. Adjuntalo en el chat de WhatsApp.');
   }
 
   async function downloadFlyer(key) {
@@ -1387,9 +1372,103 @@
   });
 
   /* ------------------------------------------------------------------ *
+   *  Versión y aviso de actualización
+   *  version.js (cargado antes que este archivo) define la versión que está corriendo;
+   *  version.json es la que está publicada. Si el build es distinto, se avisa.
+   * ------------------------------------------------------------------ */
+  const APP = window.APP_INFO || { version: '0.0.0', build: 'dev', fecha: '' };
+  const REVISAR_CADA_MS = 5 * 60 * 1000;
+  let avisoEl = null;
+  let versionCerrada = null; // "Más tarde" oculta el cartel hasta que salga otra versión
+
+  function showVersion() {
+    const el = $('#app-version');
+    if (!el) return;
+    el.textContent = `v${APP.version}`;
+    if (APP.fecha) {
+      const f = new Date(APP.fecha).toLocaleString('es-AR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
+      });
+      el.title = `Build ${APP.build} · ${f}`;
+    } else {
+      el.title = `Build ${APP.build}`;
+    }
+  }
+
+  // version.json publicado (sin caché). null si no se pudo leer (sin conexión, local, etc.)
+  async function versionPublicada() {
+    try {
+      const r = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (!r.ok) return null;
+      const v = await r.json();
+      return v && v.build ? { version: String(v.version || ''), build: String(v.build) } : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Recarga trayendo la versión nueva: ?v=<build> saltea la caché del index.html
+  // (GitHub Pages lo cachea unos minutos).
+  function recargar(build) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', build || String(Date.now()));
+    window.location.replace(url.toString());
+  }
+
+  function mostrarAviso(nueva) {
+    if (avisoEl) avisoEl.remove();
+    avisoEl = document.createElement('div');
+    avisoEl.className = 'update-banner';
+    avisoEl.setAttribute('role', 'status');
+    avisoEl.setAttribute('aria-live', 'polite');
+
+    const msg = document.createElement('p');
+    const strong = document.createElement('strong');
+    strong.textContent = `Hay una versión nueva${nueva.version ? ` (v${nueva.version})` : ''}.`;
+    msg.append(strong, ' Actualizá para ver los últimos cambios. Los datos que no se guardan solos (categorías, fechas, premio) se pierden.');
+
+    const ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = 'btn primary';
+    ok.textContent = 'Actualizar';
+    ok.addEventListener('click', () => recargar(nueva.build));
+
+    const later = document.createElement('button');
+    later.type = 'button';
+    later.className = 'update-close';
+    later.setAttribute('aria-label', 'Más tarde');
+    later.title = 'Más tarde';
+    later.textContent = '✕';
+    later.addEventListener('click', () => {
+      versionCerrada = nueva.build;
+      avisoEl.remove();
+      avisoEl = null;
+    });
+
+    avisoEl.append(msg, ok, later);
+    document.body.appendChild(avisoEl);
+  }
+
+  async function revisarVersion() {
+    if (document.visibilityState !== 'visible') return;
+    const v = await versionPublicada();
+    if (!v || v.build === APP.build || v.build === versionCerrada) return;
+    mostrarAviso(v);
+  }
+
+  function initVersion() {
+    showVersion();
+    revisarVersion();
+    setInterval(revisarVersion, REVISAR_CADA_MS);
+    document.addEventListener('visibilitychange', revisarVersion);
+    window.addEventListener('online', revisarVersion);
+  }
+
+  /* ------------------------------------------------------------------ *
    *  Init
    * ------------------------------------------------------------------ */
   initAppTheme();
+  initVersion();
   loadOpts();
   buildGallery();
   buildPalettes();
