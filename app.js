@@ -2153,6 +2153,8 @@
       $(`#panel-${k}`).hidden = !on;
     });
     try { localStorage.setItem('app-tab', id); } catch (e) { /* sin storage */ }
+    // El link #turnos / #flyers abre esa pestaña directo (sirve para redirecciones y para compartir)
+    if (window.location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
     if (focus) $(`#tab-${id}`).focus();
   }
 
@@ -2172,7 +2174,12 @@
   function initTabs() {
     let saved = null;
     try { saved = localStorage.getItem('app-tab'); } catch (e) { /* sin storage */ }
-    selectTab(TABS.includes(saved) ? saved : 'flyers');
+    const fromLink = window.location.hash.slice(1);
+    selectTab(TABS.includes(fromLink) ? fromLink : TABS.includes(saved) ? saved : 'flyers');
+    window.addEventListener('hashchange', () => {
+      const h = window.location.hash.slice(1);
+      if (TABS.includes(h)) selectTab(h);
+    });
     const bar = $('.tabs');
     bar.addEventListener('click', e => {
       const b = e.target.closest('[role=tab]');

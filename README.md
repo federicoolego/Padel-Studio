@@ -9,6 +9,8 @@ App web estática (HTML + CSS + JS, sin build ni dependencias) con dos pestañas
 
 El header (con las pestañas) y el pie quedan **fijos** al hacer scroll; el pie lleva la firma al centro y la versión a la derecha.
 
+Cada pestaña tiene su link directo: `.../Padel-Studio/#flyers` y `.../Padel-Studio/#turnos`.
+
 El icono **?** de arriba a la derecha abre un instructivo con lo que hace cada pestaña. El tema de la app (🌙/☀️) está al lado.
 
 ## Flyers Torneos
