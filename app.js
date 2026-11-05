@@ -2126,6 +2126,19 @@
     if (focus) $(`#tab-${id}`).focus();
   }
 
+  // Header y pie son fijos: se miden para dejar el contenido libre (variables CSS --head-h y --foot-h)
+  function initChrome() {
+    const root = document.documentElement;
+    const head = $('.app-head'), foot = $('.app-foot');
+    const set = () => {
+      root.style.setProperty('--head-h', head.offsetHeight + 'px');
+      root.style.setProperty('--foot-h', foot.offsetHeight + 'px');
+    };
+    set();
+    if (window.ResizeObserver) { const ro = new ResizeObserver(set); ro.observe(head); ro.observe(foot); }
+    window.addEventListener('resize', set);
+  }
+
   function initTabs() {
     let saved = null;
     try { saved = localStorage.getItem('app-tab'); } catch (e) { /* sin storage */ }
@@ -2258,6 +2271,7 @@
   /* ------------------------------------------------------------------ *
    *  Init
    * ------------------------------------------------------------------ */
+  initChrome();
   initAppTheme();
   initVersion();
   initTabs();

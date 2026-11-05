@@ -7,6 +7,8 @@ App web estática (HTML + CSS + JS, sin build ni dependencias) con dos pestañas
 | **Flyers Torneos** | 6 flyers distintos de un torneo de pádel. |
 | **Recordatorio Turnos** | 6 imágenes de recordatorio de un turno de pádel. |
 
+El header (con las pestañas) y el pie quedan **fijos** al hacer scroll; el pie lleva la firma al centro y la versión a la derecha.
+
 El icono **?** de arriba a la derecha abre un instructivo con lo que hace cada pestaña. El tema de la app (🌙/☀️) está al lado.
 
 ## Flyers Torneos

@@ -2,7 +2,7 @@
 <html lang="es" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Pádel Studio · Flyers y recordatorios de turnos</title>
   <meta name="description" content="Generá flyers de torneos y recordatorios de turnos de pádel, y compartilos por WhatsApp.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%234ade80'/%3E%3Cpath d='M6 22c14 6 14 26 0 32M58 22c-14 6-14 26 0 32' fill='none' stroke='%23fff' stroke-width='4' opacity='.8'/%3E%3C/svg%3E">
@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="styles.css?v=__BUILD__">
 </head>
 <body>
+  <div class="app-head">
   <header class="top">
     <div>
       <h1>Pádel Studio</h1>
@@ -26,6 +27,7 @@
   <div class="tabs" role="tablist" aria-label="Secciones de la app">
     <button type="button" role="tab" id="tab-flyers" data-tab="flyers" aria-controls="panel-flyers" aria-selected="true">Flyers Torneos</button>
     <button type="button" role="tab" id="tab-turnos" data-tab="turnos" aria-controls="panel-turnos" aria-selected="false" tabindex="-1">Recordatorio Turnos</button>
+  </div>
   </div>
 
   <div role="tabpanel" id="panel-flyers" aria-labelledby="tab-flyers">
@@ -163,9 +165,11 @@
     </main>
   </div>
 
-  <footer class="credit">
-    🎾 Desarrollado por Federico Olego 🎾
-    <small id="app-version" class="version"></small>
+  <footer class="app-foot">
+    <div class="foot-row">
+      <p class="sig">🎾 Desarrollado por Federico Olego 🎾</p>
+      <span id="app-version" class="version"></span>
+    </div>
   </footer>
 
   <dialog id="help" aria-labelledby="help-title">
